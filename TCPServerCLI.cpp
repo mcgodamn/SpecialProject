@@ -6,6 +6,7 @@
 #include <ws2tcpip.h>
 #include <assert.h>
 #include <Windows.h>
+#include <Winuser.h>
 #include <iostream>
 #include <string>
 #include <tchar.h>
@@ -20,15 +21,18 @@ using namespace System::Runtime::InteropServices;
 using namespace System::Windows::Forms;
 using namespace std;
 void window(string key);
-
+char id;
 int main(array<System::String ^> ^args)
 {
+	//GUITHREADINFO currentWindowGuiThreadInfo;
+	//DWORD procID;
 	HWND h;
 	int r;
 	char buffer1[3];
 	WSAData wsaData;
 	WORD DLLVSERION;
 	int keycode;
+	//INPUT Input;
 	DLLVSERION = MAKEWORD(2, 1);//Winsocket-DLL 版本
 
 	//用 WSAStartup 開始 Winsocket-DLL
@@ -47,7 +51,7 @@ int main(array<System::String ^> ^args)
 	sConnect = socket(AF_INET, SOCK_STREAM, NULL);
 
 	//設定位址資訊的資料
-	addr.sin_addr.s_addr = inet_addr("192.168.1.113");
+	addr.sin_addr.s_addr = inet_addr("192.168.1.120");
 	//192.168.1.113
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(1234);
@@ -69,33 +73,51 @@ int main(array<System::String ^> ^args)
 			printf("server: got connection from %s\n", inet_ntoa(addr.sin_addr));
 
 			//傳送訊息給 client 端
-			char *sendbuf = "sending data test";
-			send(sConnect, sendbuf, (int)strlen(sendbuf), 0); 
-			h = FindWindow(NULL, _T("1111.txt - 記事本"));
-			HWND EditClass = FindWindowEx(h, NULL, NULL, NULL);
-			//Little Fighter 2
-			//HWND EditClass = FindWindowEx(h, NULL, "Edit", NULL);
-			if (!EditClass)
-			{
-				printf("%s\n","fucku");
-			}
-			else
-			{
-				printf("%d\n", EditClass);
-				while (1)
+			char *sendbuf = "sending data test"; 
+			h = 0;
+			while (1){
+				if (!h)
 				{
-					int res = recv(sConnect, buffer1, sizeof(buffer1), 0);
-					printf("%s\n", buffer1);
-					keycode = atoi(buffer1);
-					printf("%d\n", keycode);
-					if (h)
-					{
-						SendMessage(EditClass, WM_CHAR, keycode, 0);
-						//0x002C0001
-					}
-					else printf("%s\n", "fucku");
-					memset(buffer1, '\0', sizeof(buffer1));
+					cout << "no" << endl;
+					h = FindWindow(NULL, _T("Borderlands 2 (32-bit, DX9)"));
 				}
+				else {
+					cout << h << endl;
+					break;
+				}
+			}
+			/*Input.type = INPUT_KEYBOARD;
+			Input.ki.wScan = 0;
+			Input.ki.time = 0;
+			Input.ki.dwExtraInfo = 0;*/
+			while (1)
+			{
+				//Sleep(10);
+				int res = recv(sConnect, buffer1, sizeof(buffer1), 0);
+				keycode = atoi(buffer1);
+				if (keycode > 96)
+				{
+					keycode -= 32;
+				}
+				if (h)
+				{
+					SetForegroundWindow(h);
+					keybd_event(keycode, 0, 0, 0);
+					Sleep(10);
+					keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
+
+					/*printf("%d\n", keycode);
+					Input.ki.wVk = keycode;
+					Input.ki.dwFlags = 0;
+					SendInput(1, &Input, sizeof(INPUT));
+					Input.ki.dwFlags = KEYEVENTF_KEYUP;
+					SendInput(1, &Input, sizeof(INPUT));*/ //sendinput方法
+
+					//SendMessage(h, WM_CHAR, keycode, MapVirtualKey(keycode, MAPVK_VK_TO_VSC)); //send message方法
+				}
+				else printf("%s\n", "fucku");
+				memset(buffer1, '\0', sizeof(buffer1));
+
 			}
 		}
 	}

@@ -14,7 +14,6 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 using namespace std;
-
 void main()
 {
 	char confirm;
@@ -55,14 +54,14 @@ void main()
 		exit(1);
 	}
 	else{
-		if (confirm == 'Y')
+		if (confirm == 'Y' || confirm == 'y')
 		{
 			connect(sConnect, (SOCKADDR*)&addr, sizeof(addr));
 
 			//接收 server 端的訊息
-			ZeroMemory(message, 200);
-			r = recv(sConnect, message, sizeof(message), 0);
-			cout << message << endl;
+			//ZeroMemory(message, 200);
+			//r = recv(sConnect, message, sizeof(message), 0);
+			cout << "you can go" << endl;
 			while (1)
 			{
 				buffer = _getch();
