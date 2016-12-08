@@ -10,31 +10,36 @@
 #include <iostream>
 #include <string>
 #include <tchar.h>
+#include <queue>
+//#include <thread>
 
 #using<system.dll>
 #using <System.Windows.Forms.dll>
 #using <System.dll>
 #pragma comment (lib, "ws2_32.lib")
 
+using namespace System::Threading;
 using namespace System;
 using namespace System::Runtime::InteropServices;
 using namespace System::Windows::Forms;
 using namespace std;
-void window(string key);
 char id;
+std::queue<int> keyqueue;
+void AccessQueue();
 int main(array<System::String ^> ^args)
 {
 	//GUITHREADINFO currentWindowGuiThreadInfo;
 	//DWORD procID;
 	HWND h;
 	int r;
-	char buffer1[3];
+	char buffer1[4];
 	WSAData wsaData;
 	WORD DLLVSERION;
 	int keycode;
+	Thread^ KeyDown = gcnew ::Thread(gcnew::Threading::ThreadStart(AccessQueue));
 	//INPUT Input;
 	DLLVSERION = MAKEWORD(2, 1);//Winsocket-DLL 版本
-
+ 
 	//用 WSAStartup 開始 Winsocket-DLL
 	r = WSAStartup(DLLVSERION, &wsaData);
 
@@ -51,7 +56,7 @@ int main(array<System::String ^> ^args)
 	sConnect = socket(AF_INET, SOCK_STREAM, NULL);
 
 	//設定位址資訊的資料
-	addr.sin_addr.s_addr = inet_addr("192.168.1.120");
+	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 	//192.168.1.113
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(1234);
@@ -73,28 +78,30 @@ int main(array<System::String ^> ^args)
 			printf("server: got connection from %s\n", inet_ntoa(addr.sin_addr));
 
 			//傳送訊息給 client 端
-			char *sendbuf = "sending data test"; 
+			char *sendbuf = "sending data test";
+			send(sConnect, sendbuf, (int)strlen(sendbuf), 0);
 			h = 0;
-			while (1){
+			/*while (1){
 				if (!h)
 				{
 					cout << "no" << endl;
-					h = FindWindow(NULL, _T("Borderlands 2 (32-bit, DX9)"));
+					h = FindWindow(NULL, _T("osu!"));
 				}
 				else {
 					cout << h << endl;
 					break;
 				}
-			}
-			/*Input.type = INPUT_KEYBOARD;
-			Input.ki.wScan = 0;
-			Input.ki.time = 0;
-			Input.ki.dwExtraInfo = 0;*/
+			}*/
+			//KeyDown->Start();
 			while (1)
 			{
-				//Sleep(10);
 				int res = recv(sConnect, buffer1, sizeof(buffer1), 0);
-				keycode = atoi(buffer1);
+				cout << buffer1 << endl;
+				/*keycode = atoi(buffer1);
+				keyqueue.push(keycode);*/
+				memset(buffer1, '\0', sizeof(buffer1));
+			}
+				//Sleep(10);
 				if (keycode > 96)
 				{
 					keycode -= 32;
@@ -116,10 +123,37 @@ int main(array<System::String ^> ^args)
 					//SendMessage(h, WM_CHAR, keycode, MapVirtualKey(keycode, MAPVK_VK_TO_VSC)); //send message方法
 				}
 				else printf("%s\n", "fucku");
-				memset(buffer1, '\0', sizeof(buffer1));
 
-			}
 		}
 	}
 	//getchar();
+}
+
+void AccessQueue()
+{
+	int keycode[100];
+	int i = 0,j = 0;
+	while (1)
+	{
+		while (!keyqueue.empty())
+		{
+			keycode[i] = keyqueue.front();
+			keyqueue.pop();
+			if (keycode[i] > 96)
+			{
+				keycode[i] -= 32;
+			}
+			keybd_event(keycode[i++], 0, 0, 0);
+		}
+		if (i != 0)
+		{
+			cout << i << endl;
+		}
+		Sleep(10);
+		for (j = 0; j < i; j++)
+		{
+			keybd_event(keycode[j], 0, KEYEVENTF_KEYUP, 0);
+		}
+		i = 0;
+	}
 }
