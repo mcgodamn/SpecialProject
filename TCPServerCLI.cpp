@@ -11,7 +11,6 @@
 #include <string>
 #include <tchar.h>
 #include <queue>
-//#include <thread>
 
 #using<system.dll>
 #using <System.Windows.Forms.dll>
@@ -25,21 +24,19 @@ using namespace System::Windows::Forms;
 using namespace std;
 char id;
 std::queue<int> keyqueue;
-void AccessQueue();
 int main(array<System::String ^> ^args)
 {
 	//GUITHREADINFO currentWindowGuiThreadInfo;
 	//DWORD procID;
 	HWND h;
 	int r;
-	char buffer1[4];
+	char buffer1[4],keycodechar[3];
 	WSAData wsaData;
 	WORD DLLVSERION;
 	int keycode;
-	Thread^ KeyDown = gcnew ::Thread(gcnew::Threading::ThreadStart(AccessQueue));
 	//INPUT Input;
 	DLLVSERION = MAKEWORD(2, 1);//Winsocket-DLL 版本
- 
+
 	//用 WSAStartup 開始 Winsocket-DLL
 	r = WSAStartup(DLLVSERION, &wsaData);
 
@@ -82,78 +79,46 @@ int main(array<System::String ^> ^args)
 			send(sConnect, sendbuf, (int)strlen(sendbuf), 0);
 			h = 0;
 			/*while (1){
-				if (!h)
-				{
-					cout << "no" << endl;
-					h = FindWindow(NULL, _T("osu!"));
-				}
-				else {
-					cout << h << endl;
-					break;
-				}
+			if (!h)
+			{
+			cout << "no" << endl;
+			h = FindWindow(NULL, _T("osu!"));
+			}
+			else {
+			cout << h << endl;
+			break;
+			}
 			}*/
 			//KeyDown->Start();
 			while (1)
 			{
 				int res = recv(sConnect, buffer1, sizeof(buffer1), 0);
-				cout << buffer1 << endl;
-				/*keycode = atoi(buffer1);
-				keyqueue.push(keycode);*/
+				cout << buffer1[0] << buffer1[1] << buffer1[2] << buffer1[3] << endl;
+				strncpy(keycodechar, buffer1 + 1, 3);
+				keycode = atoi(buffer1);
+				if (buffer1[0] == 'D')
+				{
+					if (keycode > 96) keycode -= 32;
+					if (h)
+					{
+						SetForegroundWindow(h);
+						keybd_event(keycode, 0, 0, 0);
+						keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
+					}
+				}
+				else
+				{
+					if (keycode > 96) keycode -= 32;
+					if (h)
+					{
+						SetForegroundWindow(h);
+						keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
+					}
+				}
+				memset(keycodechar, '\0', sizeof(keycodechar));
 				memset(buffer1, '\0', sizeof(buffer1));
 			}
-				//Sleep(10);
-				if (keycode > 96)
-				{
-					keycode -= 32;
-				}
-				if (h)
-				{
-					SetForegroundWindow(h);
-					keybd_event(keycode, 0, 0, 0);
-					Sleep(10);
-					keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
-
-					/*printf("%d\n", keycode);
-					Input.ki.wVk = keycode;
-					Input.ki.dwFlags = 0;
-					SendInput(1, &Input, sizeof(INPUT));
-					Input.ki.dwFlags = KEYEVENTF_KEYUP;
-					SendInput(1, &Input, sizeof(INPUT));*/ //sendinput方法
-
-					//SendMessage(h, WM_CHAR, keycode, MapVirtualKey(keycode, MAPVK_VK_TO_VSC)); //send message方法
-				}
-				else printf("%s\n", "fucku");
-
 		}
 	}
 	//getchar();
-}
-
-void AccessQueue()
-{
-	int keycode[100];
-	int i = 0,j = 0;
-	while (1)
-	{
-		while (!keyqueue.empty())
-		{
-			keycode[i] = keyqueue.front();
-			keyqueue.pop();
-			if (keycode[i] > 96)
-			{
-				keycode[i] -= 32;
-			}
-			keybd_event(keycode[i++], 0, 0, 0);
-		}
-		if (i != 0)
-		{
-			cout << i << endl;
-		}
-		Sleep(10);
-		for (j = 0; j < i; j++)
-		{
-			keybd_event(keycode[j], 0, KEYEVENTF_KEYUP, 0);
-		}
-		i = 0;
-	}
 }
