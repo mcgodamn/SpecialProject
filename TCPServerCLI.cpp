@@ -53,7 +53,7 @@ int main(array<System::String ^> ^args)
 	sConnect = socket(AF_INET, SOCK_STREAM, NULL);
 
 	//設定位址資訊的資料
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	addr.sin_addr.s_addr = inet_addr("192.168.1.146");
 	//192.168.1.113
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(1234);
@@ -78,24 +78,25 @@ int main(array<System::String ^> ^args)
 			char *sendbuf = "sending data test";
 			send(sConnect, sendbuf, (int)strlen(sendbuf), 0);
 			h = 0;
-			/*while (1){
+			while (1){
 			if (!h)
 			{
 			cout << "no" << endl;
-			h = FindWindow(NULL, _T("osu!"));
+			h = FindWindow(NULL, _T("VisualBoyAdvance-100%"));
 			}
 			else {
 			cout << h << endl;
 			break;
 			}
-			}*/
+			}
 			//KeyDown->Start();
 			while (1)
 			{
 				int res = recv(sConnect, buffer1, sizeof(buffer1), 0);
 				cout << buffer1[0] << buffer1[1] << buffer1[2] << buffer1[3] << endl;
 				strncpy(keycodechar, buffer1 + 1, 3);
-				keycode = atoi(buffer1);
+				keycode = atoi(keycodechar);
+				printf("%d\n",keycode);
 				if (buffer1[0] == 'D')
 				{
 					if (keycode > 96) keycode -= 32;
@@ -103,7 +104,6 @@ int main(array<System::String ^> ^args)
 					{
 						SetForegroundWindow(h);
 						keybd_event(keycode, 0, 0, 0);
-						keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
 					}
 				}
 				else
