@@ -21,7 +21,7 @@ namespace TCPClintForm {
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
 	using namespace System::Drawing;
-	
+
 	/// <summary>
 	/// Summary for MyForm
 	/// </summary>
@@ -35,6 +35,7 @@ namespace TCPClintForm {
 	private: System::Windows::Forms::TextBox^  textBox2;
 	private: System::Windows::Forms::TextBox^  textBox3;
 	private: System::Windows::Forms::Timer^  timer1;
+	private: System::Windows::Forms::Timer^  timer2;
 
 	public:
 		bool connected;
@@ -88,6 +89,7 @@ namespace TCPClintForm {
 			this->textBox2 = (gcnew System::Windows::Forms::TextBox());
 			this->textBox3 = (gcnew System::Windows::Forms::TextBox());
 			this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
+			this->timer2 = (gcnew System::Windows::Forms::Timer(this->components));
 			this->SuspendLayout();
 			// 
 			// textBox1
@@ -137,7 +139,13 @@ namespace TCPClintForm {
 			// timer1
 			// 
 			this->timer1->Enabled = true;
+			this->timer1->Interval = 20;
 			this->timer1->Tick += gcnew System::EventHandler(this, &MyForm::timer1_Tick);
+			// 
+			// timer2
+			// 
+			this->timer2->Enabled = true;
+			this->timer2->Tick += gcnew System::EventHandler(this, &MyForm::timer2_Tick);
 			// 
 			// MyForm
 			// 
@@ -149,8 +157,11 @@ namespace TCPClintForm {
 			this->Controls->Add(this->button2);
 			this->Controls->Add(this->button1);
 			this->Controls->Add(this->textBox1);
+			this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::None;
 			this->Name = L"MyForm";
+			this->StartPosition = System::Windows::Forms::FormStartPosition::CenterScreen;
 			this->Text = L"MyForm";
+			this->TopMost = true;
 			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			this->ResumeLayout(false);
 			this->PerformLayout();
@@ -163,15 +174,16 @@ namespace TCPClintForm {
 		connected = false;
 		int width = GetSystemMetrics(SM_CXSCREEN);
 		int height = GetSystemMetrics(SM_CYSCREEN);
+
+	}
+
+
+	private: Void timer1_Tick(System::Object ^ sender, System::EventArgs ^ e){
+		textBox2->Text = Cursor->Position.X.ToString();
+		textBox3->Text = Cursor->Position.Y.ToString();
+		Mouse();
 		
 	}
-	
-
-	private: Void timer1_Tick(System::Object ^ sender,System::EventArgs ^ e){			
-			textBox2->Text = Cursor->Position.X.ToString();
-			textBox3->Text = Cursor->Position.Y.ToString();
-			Mouse();
-		}
 
 
 	private: System::Void textbox1_KeyDown(System::Object^  sender, System::Windows::Forms::KeyEventArgs^  e) {
@@ -217,46 +229,49 @@ namespace TCPClintForm {
 			sConnect = socket(AF_INET, SOCK_STREAM, NULL);
 
 			//設定 addr 資料
-			addr.sin_addr.s_addr = inet_addr("192.168.1.131");
+			addr.sin_addr.s_addr = inet_addr("192.168.1.115");
 			//192.168.1.128
 			addr.sin_family = AF_INET;
 			addr.sin_port = htons(1234);
 			if (TCPClintForm::MyForm::check != true) return;
 			connect(sConnect, (SOCKADDR*)&addr, sizeof(addr));
 			r = recv(sConnect, message, sizeof(message), 0);
-			
+
 		}
-		
-			//textBox1->Text = "(" + width.ToString() + "," + height.ToString() + ")";
-			//char width[5],height[5];
-			String^ width = gcnew String("");
-			String^ height = gcnew String("");
-			width = "W" + GetSystemMetrics(SM_CXSCREEN).ToString();
-			height = "W" + GetSystemMetrics(SM_CYSCREEN).ToString();
-			char widths[5],heights[5];
-			for (int j = 0; j < width->Length; j++){
-				widths[j] = width[j];
-			}
-			for (int j = 0; j < height->Length; j++){
-				heights[j] = height[j];
-			}
-			r = send(sConnect,widths , sizeof(widths), 0);
-			r = send(sConnect, heights, sizeof(heights), 0);
-			//Thread^ thr1 = gcnew::Thread(gcnew::ThreadStart(SendKeys));
-			//Thread^ thr2 = gcnew::Thread(gcnew::ThreadStart(Mouse));
-			//thr1->Start();
-			//thr2->Start();
-		
-		
-		
+
+		//textBox1->Text = "(" + width.ToString() + "," + height.ToString() + ")";
+		//char width[5],height[5];
+		String^ width = gcnew String("");
+		String^ height = gcnew String("");
+		width = "W" + GetSystemMetrics(SM_CXSCREEN).ToString();
+		height = "W" + GetSystemMetrics(SM_CYSCREEN).ToString();
+		char widths[5], heights[5];
+		for (int j = 0; j < width->Length; j++){
+			widths[j] = width[j];
+		}
+		for (int j = 0; j < height->Length; j++){
+			heights[j] = height[j];
+		}
+		r = send(sConnect, widths, sizeof(widths), 0);
+		r = send(sConnect, heights, sizeof(heights), 0);
+		//Thread^ thr1 = gcnew::Thread(gcnew::ThreadStart(SendKeys));
+		//Thread^ thr2 = gcnew::Thread(gcnew::ThreadStart(Mouse));
+		//thr1->Start();
+		//thr2->Start();
+
+
+
 		//closesocket(sConnect);
 	}
-		private:static void Mouse(){
-			int r;
-			String^ X = gcnew String("");
-			String^ Y = gcnew String("");
-			X = "M" + GetSystemMetrics(SM_CXSCREEN).ToString();
-			Y = "M" + GetSystemMetrics(SM_CYSCREEN).ToString();
+	private:static void Mouse(){
+		//if ()
+		int r;
+		String^ X = gcnew String("");
+		String^ Y = gcnew String("");
+		POINT p;
+		if (GetCursorPos(&p)){
+			X = "X" + p.x.ToString();
+			Y = "Y" + p.y.ToString();
 			char Xs[5], Ys[5];
 			for (int j = 0; j < X->Length; j++){
 				Xs[j] = X[j];
@@ -267,6 +282,7 @@ namespace TCPClintForm {
 			r = send(sConnect, Xs, sizeof(Xs), 0);
 			r = send(sConnect, Ys, sizeof(Ys), 0);
 		}
+	}
 
 	private:static void SendKeys(){
 		String^ Send = gcnew String("");
@@ -282,13 +298,19 @@ namespace TCPClintForm {
 			r = send(sConnect, key, sizeof(key), 0);
 		}
 	}
-private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e) {
-	String^ width = gcnew String("");
-	width = "W" + GetSystemMetrics(SM_CYSCREEN).ToString();
-	char widths[5];
-	for (int j = 0; j < width->Length ; j++){
-		widths[j] = width[j];
+	private: System::Void button2_Click(System::Object^  sender, System::EventArgs^  e) {
+		String^ width = gcnew String("");
+		width = "W" + GetSystemMetrics(SM_CYSCREEN).ToString();
+		char widths[5];
+		for (int j = 0; j < width->Length; j++){
+			widths[j] = width[j];
+		}
 	}
-}
+	private: System::Void timer2_Tick(System::Object^  sender, System::EventArgs^  e) {
+		if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0)
+		{
+			MessageBox::Show("LButton pressed");
+		}
+	}
 };
 }

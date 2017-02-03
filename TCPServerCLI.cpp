@@ -1,4 +1,3 @@
-
 #include "stdafx.h"
 #include <string.h>
 #include <sys/types.h>
@@ -30,7 +29,7 @@ int main(array<System::String ^> ^args)
 	//DWORD procID;
 	HWND h;
 	int r;
-	char buffer1[4],keycodechar[3];
+	char buffer1[5], keycodechar[3];
 	WSAData wsaData;
 	WORD DLLVSERION;
 	int keycode;
@@ -53,7 +52,7 @@ int main(array<System::String ^> ^args)
 	sConnect = socket(AF_INET, SOCK_STREAM, NULL);
 
 	//設定位址資訊的資料
-	addr.sin_addr.s_addr = inet_addr("192.168.1.146");
+	addr.sin_addr.s_addr = inet_addr("192.168.1.115");
 	//192.168.1.113
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(1234);
@@ -79,46 +78,83 @@ int main(array<System::String ^> ^args)
 			send(sConnect, sendbuf, (int)strlen(sendbuf), 0);
 			h = 0;
 			while (1){
-			if (!h)
-			{
-			cout << "no" << endl;
-			h = FindWindow(NULL, _T("VisualBoyAdvance-100%"));
-			}
-			else {
-			cout << h << endl;
-			break;
-			}
+				if (!h)
+				{
+					cout << "no" << endl;
+					h = FindWindow(NULL, _T("VisualBoyAdvance-100%"));
+				}
+				else {
+					cout << h << endl;
+					break;
+				}
 			}
 			//KeyDown->Start();
+			int wwh = 0, windowsWH[2];
+			char whbuffer[5],whchar[4];
+			for (int h = 0; h < 2; h++){//client端的解析度
+				int res = recv(sConnect, whbuffer, sizeof(whbuffer), 0);
+				if (whbuffer[0] == 'W'){
+					strncpy(whchar, whbuffer + 1, sizeof(whbuffer) - 1);
+					windowsWH[wwh] = atoi(whchar);
+					wwh += 1;
+					memset(whchar, '\0', sizeof(whchar));
+					memset(whbuffer, '\0', sizeof(whbuffer));
+				}
+			}
+			double rateW = 1920.0f / windowsWH[0];//螢幕寬的比
+			double rateH = 1080.0f / windowsWH[1];//螢幕高的比
+			cout << "(" << rateW << "," << rateH << ")" << endl;
+			int MousePos[2];
+			char Mchar[4];
 			while (1)
 			{
 				int res = recv(sConnect, buffer1, sizeof(buffer1), 0);
-				cout << buffer1[0] << buffer1[1] << buffer1[2] << buffer1[3] << endl;
-				strncpy(keycodechar, buffer1 + 1, 3);
-				keycode = atoi(keycodechar);
-				printf("%d\n",keycode);
-				if (buffer1[0] == 'D')
-				{
-					if (keycode > 96) keycode -= 32;
+				
+				if (buffer1[0] == 'X'){
+					strncpy(Mchar, buffer1 + 1, sizeof(buffer1) - 1);
+					MousePos[0] = atoi(Mchar) * rateW;
+					memset(buffer1, '\0', sizeof(buffer1));
+					memset(Mchar, '\0', sizeof(Mchar));
+				}
+				else if (buffer1[0] == 'Y'){
+					strncpy(Mchar, buffer1 + 1, sizeof(buffer1) - 1);
+					MousePos[1] = atoi(Mchar) * rateH;
 					if (h)
 					{
 						SetForegroundWindow(h);
-						keybd_event(keycode, 0, 0, 0);
+						SetCursorPos(MousePos[0], MousePos[1]);
 					}
+					memset(buffer1, '\0', sizeof(buffer1));
+					memset(Mchar, '\0', sizeof(Mchar));
 				}
-				else
-				{
-					if (keycode > 96) keycode -= 32;
-					if (h)
+				else if (buffer1[0] != 'W' && buffer1[0] != 'M'){
+					
+					//printf("%d\n", keycode);
+					if (buffer1[0] == 'D')
 					{
-						SetForegroundWindow(h);
-						keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
+						strncpy(keycodechar, buffer1 + 1, sizeof(buffer1));
+						keycode = atoi(keycodechar);
+						cout << buffer1[0] << buffer1[1] << buffer1[2] << buffer1[3] << buffer1[4] << endl;
+						if (keycode > 96) keycode -= 32;
+						if (h)
+						{
+							SetForegroundWindow(h);
+							keybd_event(keycode, 0, 0, 0);
+						}
 					}
+					else
+					{
+						if (keycode > 96) keycode -= 32;
+						if (h)
+						{
+							SetForegroundWindow(h);
+							keybd_event(keycode, 0, KEYEVENTF_KEYUP, 0);
+						}
+					}
+					memset(keycodechar, '\0', sizeof(keycodechar));
+					memset(buffer1, '\0', sizeof(buffer1));
 				}
-				memset(keycodechar, '\0', sizeof(keycodechar));
-				memset(buffer1, '\0', sizeof(buffer1));
 			}
 		}
 	}
-	//getchar();
 }
