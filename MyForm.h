@@ -30,15 +30,22 @@ namespace TCPClintForm {
 	public:
 		static SOCKET sConnect;
 		static String^ sendData;
+		static SOCKET sConnectPos;
+		static String^ sendDataPos;
 		static bool check;
+		static bool checkPos;
+		char* ip = "192.168.1.114";
 	private: System::Windows::Forms::Button^  button2;
 	private: System::Windows::Forms::TextBox^  textBox2;
 	private: System::Windows::Forms::TextBox^  textBox3;
 	private: System::Windows::Forms::Timer^  timer1;
 	private: System::Windows::Forms::Timer^  timer2;
+	private: AxAXVLC::AxVLCPlugin2^  axVLCPlugin21;
+	private: System::Windows::Forms::Button^  button3;
 
 	public:
 		bool connected;
+		bool connectedPos;
 		MyForm(void)
 		{
 			InitializeComponent();
@@ -83,6 +90,7 @@ namespace TCPClintForm {
 		void InitializeComponent(void)
 		{
 			this->components = (gcnew System::ComponentModel::Container());
+			System::ComponentModel::ComponentResourceManager^  resources = (gcnew System::ComponentModel::ComponentResourceManager(MyForm::typeid));
 			this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			this->button1 = (gcnew System::Windows::Forms::Button());
 			this->button2 = (gcnew System::Windows::Forms::Button());
@@ -90,6 +98,9 @@ namespace TCPClintForm {
 			this->textBox3 = (gcnew System::Windows::Forms::TextBox());
 			this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
 			this->timer2 = (gcnew System::Windows::Forms::Timer(this->components));
+			this->axVLCPlugin21 = (gcnew AxAXVLC::AxVLCPlugin2());
+			this->button3 = (gcnew System::Windows::Forms::Button());
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->axVLCPlugin21))->BeginInit();
 			this->SuspendLayout();
 			// 
 			// textBox1
@@ -147,11 +158,32 @@ namespace TCPClintForm {
 			this->timer2->Enabled = true;
 			this->timer2->Tick += gcnew System::EventHandler(this, &MyForm::timer2_Tick);
 			// 
+			// axVLCPlugin21
+			// 
+			this->axVLCPlugin21->Enabled = true;
+			this->axVLCPlugin21->Location = System::Drawing::Point(277, 12);
+			this->axVLCPlugin21->Name = L"axVLCPlugin21";
+			this->axVLCPlugin21->OcxState = (cli::safe_cast<System::Windows::Forms::AxHost::State^>(resources->GetObject(L"axVLCPlugin21.OcxState")));
+			this->axVLCPlugin21->Size = System::Drawing::Size(320, 240);
+			this->axVLCPlugin21->TabIndex = 7;
+			// 
+			// button3
+			// 
+			this->button3->Location = System::Drawing::Point(114, 258);
+			this->button3->Name = L"button3";
+			this->button3->Size = System::Drawing::Size(75, 23);
+			this->button3->TabIndex = 8;
+			this->button3->Text = L"play";
+			this->button3->UseVisualStyleBackColor = true;
+			this->button3->Click += gcnew System::EventHandler(this, &MyForm::button3_Click);
+			// 
 			// MyForm
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(300, 300);
+			this->ClientSize = System::Drawing::Size(651, 300);
+			this->Controls->Add(this->button3);
+			this->Controls->Add(this->axVLCPlugin21);
 			this->Controls->Add(this->textBox3);
 			this->Controls->Add(this->textBox2);
 			this->Controls->Add(this->button2);
@@ -163,6 +195,10 @@ namespace TCPClintForm {
 			this->Text = L"MyForm";
 			this->TopMost = true;
 			this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
+			this->MouseDown += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::MyForm_MouseDown);
+			this->MouseUp += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::MyForm_MouseUp);
+			this->MouseWheel += gcnew System::Windows::Forms::MouseEventHandler(this, &MyForm::MyForm_MouseWheel);
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->axVLCPlugin21))->EndInit();
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
@@ -170,11 +206,12 @@ namespace TCPClintForm {
 #pragma endregion
 	private: System::Void MyForm_Load(System::Object^  sender, System::EventArgs^  e) {
 		check = new bool(false);
+		checkPos = new bool(false);
 		sendData = gcnew String("");
 		connected = false;
+		connectedPos = false;
 		int width = GetSystemMetrics(SM_CXSCREEN);
 		int height = GetSystemMetrics(SM_CYSCREEN);
-
 	}
 
 
@@ -182,7 +219,7 @@ namespace TCPClintForm {
 		textBox2->Text = Cursor->Position.X.ToString();
 		textBox3->Text = Cursor->Position.Y.ToString();
 		Mouse();
-		
+
 	}
 
 
@@ -200,7 +237,48 @@ namespace TCPClintForm {
 
 	private: System::Void button1_Click(System::Object^  sender, System::EventArgs^  e) {
 		check = true;
+		checkPos = true;
 		Connection();
+		ConnectionPos();
+	}
+
+	private:void ConnectionPos()
+	{
+		char messagePos[200];
+		int bufferPos;
+		char keyPos[4];
+		int r;
+		//開始 Winsock-DLL
+		if (!connectedPos)
+		{
+			WSAData wsaData;
+			WORD DLLVersion;
+			DLLVersion = MAKEWORD(2, 1);
+			SOCKADDR_IN addr;
+			connectedPos = true;
+			r = WSAStartup(DLLVersion, &wsaData);
+			//宣告給 socket 使用的 sockadder_in 結構
+			
+			int addlen = sizeof(addr);
+
+			//設定 socket
+
+			//AF_INET: internet-family
+			//SOCKET_STREAM: connection-oriented socket
+			sConnectPos = socket(AF_INET, SOCK_STREAM, NULL);
+
+			//設定 addr 資料
+			addr.sin_addr.s_addr = inet_addr(ip);
+			//192.168.1.128
+			addr.sin_family = AF_INET;
+			addr.sin_port = htons(1235);
+			if (TCPClintForm::MyForm::checkPos != true) return;
+			connect(sConnectPos, (SOCKADDR*)&addr, sizeof(addr));
+			r = recv(sConnectPos, messagePos, sizeof(messagePos), 0);
+			textBox1->Text = "oooo";
+		}
+		//Thread^ mm = gcnew Thread(gcnew ThreadStart(Mouse));
+		//mm->Start();
 	}
 
 	private:void Connection()
@@ -219,7 +297,7 @@ namespace TCPClintForm {
 			connected = true;
 			r = WSAStartup(DLLVersion, &wsaData);
 			//宣告給 socket 使用的 sockadder_in 結構
-
+			textBox1->Text = r.ToString();
 			int addlen = sizeof(addr);
 
 			//設定 socket
@@ -229,14 +307,14 @@ namespace TCPClintForm {
 			sConnect = socket(AF_INET, SOCK_STREAM, NULL);
 
 			//設定 addr 資料
-			addr.sin_addr.s_addr = inet_addr("192.168.1.115");
+			addr.sin_addr.s_addr = inet_addr(ip);
 			//192.168.1.128
 			addr.sin_family = AF_INET;
 			addr.sin_port = htons(1234);
 			if (TCPClintForm::MyForm::check != true) return;
 			connect(sConnect, (SOCKADDR*)&addr, sizeof(addr));
 			r = recv(sConnect, message, sizeof(message), 0);
-
+			
 		}
 
 		//textBox1->Text = "(" + width.ToString() + "," + height.ToString() + ")";
@@ -279,8 +357,8 @@ namespace TCPClintForm {
 			for (int j = 0; j < Y->Length; j++){
 				Ys[j] = Y[j];
 			}
-			r = send(sConnect, Xs, sizeof(Xs), 0);
-			r = send(sConnect, Ys, sizeof(Ys), 0);
+			r = send(sConnectPos, Xs, sizeof(Xs), 0);
+			r = send(sConnectPos, Ys, sizeof(Ys), 0);
 		}
 	}
 
@@ -307,10 +385,72 @@ namespace TCPClintForm {
 		}
 	}
 	private: System::Void timer2_Tick(System::Object^  sender, System::EventArgs^  e) {
+		int r;
 		if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0)
 		{
-			MessageBox::Show("LButton pressed");
+			//MessageBox::Show("LButton pressed");
+			r = send(sConnect, "L", 1, 0);
+		}
+
+		if ((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0)
+		{
+			//MessageBox::Show("RButton pressed");
+			r = send(sConnect, "R", 1, 0);
+		}
+
+		if ((GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0)
+		{
+			
+			r = send(sConnect, "M", 1, 0);
 		}
 	}
+
+	private: System::Void MyForm_MouseWheel(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e) {
+		int r;
+		if (e->Delta == 120){
+			r = send(sConnect, "Z", 1, 0);//往前滾
+		}
+
+		if (e->Delta == -120){
+			r = send(sConnect, "A", 1, 0);//往後滾
+		}
+		
+	}
+	private: System::Void button3_Click(System::Object^  sender, System::EventArgs^  e) {
+		axVLCPlugin21->playlist->add("rtsp://192.168.1.114:8554/","",nullptr);
+		axVLCPlugin21->playlist->play();
+	}
+	
+			int updownL = 0;//滑鼠左鍵狀態
+			int updownR = 2;//滑鼠右鍵狀態
+private: System::Void MyForm_MouseDown(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e) {
+	int r;
+	if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0) {
+		updownL += 1;
+		
+		r = send(sConnect, "L", 1, 0);
+	}
+
+	if ((GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0) {
+		updownR += 1;
+		//textBox1->Text = updownR.ToString();
+		r = send(sConnect, "R", 1, 0);
+	}
+}
+
+private: System::Void MyForm_MouseUp(System::Object^  sender, System::Windows::Forms::MouseEventArgs^  e) {
+	int r;
+	if (updownL == 1) {
+		updownL -= 1;
+		r = send(sConnect, "B", 1, 0);
+	}
+	if (updownR == 3) {
+		updownR -= 1;
+		//textBox1->Text = updownR.ToString();
+		r = send(sConnect, "C", 1, 0);
+	}
+}
 };
+
+
 }
